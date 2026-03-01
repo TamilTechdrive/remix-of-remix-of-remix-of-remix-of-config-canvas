@@ -4,7 +4,7 @@ export interface ConfigNodeData {
   label: string;
   type: ConfigNodeType;
   description?: string;
-  properties: Record<string, string | number | boolean>;
+  properties: Record<string, unknown>;
   visible: boolean;
   visibilityRule?: string;
   validationRules?: ValidationRule[];

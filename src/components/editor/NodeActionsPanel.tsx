@@ -61,6 +61,14 @@ const IMPACT_COLORS: Record<string, string> = {
   critical: 'bg-destructive/20 text-destructive',
 };
 
+const RULE_TYPE_DESCRIPTIONS: Record<UserRule['type'], string> = {
+  dependency: 'This node requires the target to be active',
+  conflict: 'This node cannot coexist with the target',
+  must_enable: 'The target must always be enabled when this is active',
+  must_disable: 'The target must always be disabled when this is active',
+  duplicate: 'This node is a duplicate/alias of the target',
+};
+
 const NodeActionsPanel = ({
   nodeId,
   nodes,
@@ -440,41 +448,46 @@ const NodeActionsPanel = ({
             {/* Impact Level */}
             <div>
               <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Impact Level</label>
-              <Select
-                value={meta.impact_level}
-                onValueChange={(v) => onUpdateNodeMeta(nodeId, { impact_level: v as NodeMeta['impact_level'] })}
-              >
-                <SelectTrigger className="mt-1 h-8 text-xs bg-card">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">🟢 Low</SelectItem>
-                  <SelectItem value="medium">🔵 Medium</SelectItem>
-                  <SelectItem value="high">🟡 High</SelectItem>
-                  <SelectItem value="critical">🔴 Critical</SelectItem>
-                </SelectContent>
-              </Select>
+              <p className="text-[10px] text-muted-foreground mb-1">How critical is changing this node?</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {(['low', 'medium', 'high', 'critical'] as const).map((level) => (
+                  <Button
+                    key={level}
+                    variant={meta.impact_level === level ? 'default' : 'outline'}
+                    size="sm"
+                    className={`h-7 text-[10px] capitalize ${meta.impact_level === level ? IMPACT_COLORS[level] : ''}`}
+                    onClick={() => onUpdateNodeMeta(nodeId, { impact_level: level })}
+                  >
+                    {level === 'low' ? '🟢' : level === 'medium' ? '🔵' : level === 'high' ? '🟡' : '🔴'} {level}
+                  </Button>
+                ))}
+              </div>
             </div>
 
             {/* Priority */}
             <div>
               <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Priority (0-10)</label>
-              <Input
-                type="number"
-                min={0}
-                max={10}
-                value={meta.priority}
-                onChange={(e) => onUpdateNodeMeta(nodeId, { priority: parseInt(e.target.value) || 0 })}
-                className="mt-1 h-8 text-xs bg-card"
-              />
+              <p className="text-[10px] text-muted-foreground mb-1">Higher = processed first in rule engine</p>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="range"
+                  min={0}
+                  max={10}
+                  value={meta.priority}
+                  onChange={(e) => onUpdateNodeMeta(nodeId, { priority: parseInt(e.target.value) || 0 })}
+                  className="h-6 flex-1 bg-transparent border-0 p-0"
+                />
+                <Badge variant="outline" className="text-xs min-w-[28px] justify-center">{meta.priority}</Badge>
+              </div>
             </div>
 
             {/* Tags */}
             <div>
               <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Tags</label>
+              <p className="text-[10px] text-muted-foreground mb-1">Categorize and filter nodes</p>
               <div className="flex flex-wrap gap-1 mt-1">
                 {meta.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="text-[10px] gap-1 cursor-pointer hover:bg-destructive/20" onClick={() => handleRemoveTag(tag)}>
+                  <Badge key={tag} variant="secondary" className="text-[10px] gap-1 cursor-pointer hover:bg-destructive/20 transition-colors" onClick={() => handleRemoveTag(tag)}>
                     {tag} <X className="w-2.5 h-2.5" />
                   </Badge>
                 ))}
@@ -491,23 +504,50 @@ const NodeActionsPanel = ({
                   <Plus className="w-3 h-3" />
                 </Button>
               </div>
+              {/* Quick tag suggestions */}
+              <div className="flex flex-wrap gap-1 mt-2">
+                {['core', 'optional', 'beta', 'deprecated', 'premium', 'required'].filter(t => !meta.tags.includes(t)).slice(0, 4).map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="text-[9px] cursor-pointer hover:bg-accent/20 transition-colors opacity-60 hover:opacity-100"
+                    onClick={() => {
+                      onUpdateNodeMeta(nodeId, { tags: [...meta.tags, tag] });
+                    }}
+                  >
+                    + {tag}
+                  </Badge>
+                ))}
+              </div>
             </div>
 
             <Separator />
 
-            {/* Summary */}
+            {/* Node Health Summary */}
             <div className="bg-card border border-border rounded-lg p-3 text-xs space-y-2">
               <p className="font-semibold text-foreground flex items-center gap-1.5">
                 <ShieldAlert className="w-3.5 h-3.5 text-accent" />
-                Node Summary
+                Node Health Report
               </p>
-              <div className="grid grid-cols-2 gap-2 text-muted-foreground">
-                <span>Type:</span><span className="text-foreground font-medium">{data.type}</span>
-                <span>Connections:</span><span className="text-foreground font-medium">{edges.filter(e => e.source === nodeId || e.target === nodeId).length}</span>
-                <span>User Rules:</span><span className="text-foreground font-medium">{userRules.length}</span>
-                <span>Auto Issues:</span><span className="text-foreground font-medium">{analysis.issues.length}</span>
-                <span>Dependencies:</span><span className="text-foreground font-medium">{analysis.dependencies.length}</span>
-                <span>Conflicts:</span><span className="text-foreground font-medium">{analysis.conflicts.length}</span>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Status</span>
+                  <Badge className={`text-[10px] ${
+                    analysis.health === 'healthy' ? 'bg-node-module/20 text-node-module' :
+                    analysis.health === 'warning' ? 'bg-node-group/20 text-node-group' :
+                    'bg-destructive/20 text-destructive'
+                  }`}>
+                    {analysis.health === 'healthy' ? '✅ Healthy' : analysis.health === 'warning' ? '⚠️ Warning' : '❌ Critical'}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-muted-foreground pt-1">
+                  <span>Type:</span><span className="text-foreground font-medium">{data.type}</span>
+                  <span>Connections:</span><span className="text-foreground font-medium">{edges.filter(e => e.source === nodeId || e.target === nodeId).length}</span>
+                  <span>User Rules:</span><span className="text-foreground font-medium">{userRules.length}</span>
+                  <span>Auto Issues:</span><span className="text-foreground font-medium">{analysis.issues.length}</span>
+                  <span>Dependencies:</span><span className="text-foreground font-medium">{analysis.dependencies.length}</span>
+                  <span>Conflicts:</span><span className="text-foreground font-medium">{analysis.conflicts.length}</span>
+                </div>
               </div>
             </div>
           </TabsContent>
