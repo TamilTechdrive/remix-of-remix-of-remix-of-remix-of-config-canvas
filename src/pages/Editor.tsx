@@ -395,7 +395,7 @@ const EditorCanvas = () => {
                   data={selectedNode.data as unknown as ConfigNodeData}
                   onUpdate={updateNodeData}
                   onClose={() => setRightPanel('none')}
-                  onDelete={deleteNode}
+                  onDelete={confirmedDeleteNode}
                   onAutoAdd={autoAddChild}
                   edges={edges}
                   allNodes={nodes}
