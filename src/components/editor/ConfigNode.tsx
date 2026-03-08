@@ -110,7 +110,7 @@ const ConfigNode = ({ id, data, selected }: NodeProps) => {
         </div>
       )}
       {errorCount === 0 && warningCount === 0 && (
-        <div className="absolute -top-2 right-5 z-10">
+        <div className="absolute -top-3 right-5 z-30">
           <span className="flex items-center bg-node-module text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full">
             <CheckCircle2 className="w-2.5 h-2.5" />
           </span>
