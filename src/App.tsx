@@ -11,6 +11,9 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import Editor from "./pages/Editor";
+import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
+import ModuleEditor from "./pages/ModuleEditor";
 import Analytics from "./pages/Analytics";
 import Management from "./pages/Management";
 import AdminPanel from "./pages/AdminPanel";
@@ -33,6 +36,21 @@ const App = () => (
             <Route path="/" element={
               <ProtectedRoute>
                 <AppShell><Dashboard /></AppShell>
+              </ProtectedRoute>
+            } />
+            <Route path="/projects" element={
+              <ProtectedRoute>
+                <AppShell><Projects /></AppShell>
+              </ProtectedRoute>
+            } />
+            <Route path="/projects/:projectId" element={
+              <ProtectedRoute>
+                <AppShell><ProjectDetail /></AppShell>
+              </ProtectedRoute>
+            } />
+            <Route path="/projects/:projectId/builds/:buildId/modules/:moduleId/editor" element={
+              <ProtectedRoute>
+                <AppShell><ModuleEditor /></AppShell>
               </ProtectedRoute>
             } />
             <Route path="/editor" element={
