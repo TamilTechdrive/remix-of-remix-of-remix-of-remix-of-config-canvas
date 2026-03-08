@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConfigStorage } from '@/hooks/useConfigStorage';
-import { Save, FolderOpen, Trash2, Cloud, CloudOff, Lock, X, LogOut, User, ChevronDown } from 'lucide-react';
+import { Save, FolderOpen, Trash2, Cloud, CloudOff, Lock, X, LogOut, User, ChevronDown, Shield } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface CloudToolbarProps {
