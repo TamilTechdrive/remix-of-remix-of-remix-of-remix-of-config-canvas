@@ -194,7 +194,7 @@ const ImportCompareDialog = ({
         </DialogHeader>
 
         {/* Source Picker */}
-        <div className="space-y-3 border border-border rounded-lg p-4 bg-muted/30">
+        <div className="space-y-3 border border-border rounded-lg p-4 bg-muted/30 shrink-0">
           <p className="text-xs font-semibold text-foreground uppercase tracking-wider">Source Configuration</p>
           <div className="grid grid-cols-2 gap-3">
             {/* Project */}
