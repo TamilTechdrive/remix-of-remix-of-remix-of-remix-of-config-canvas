@@ -248,9 +248,16 @@ const ProjectDetail = () => {
             <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{project.description}</p>
           )}
         </div>
-        <Button variant="outline" size="sm" onClick={exportProject} className="gap-1.5">
-          <Download className="w-3.5 h-3.5" /> Export Project
-        </Button>
+        <div className="flex items-center gap-2">
+          {selectedBuild && (
+            <Button variant="outline" size="sm" onClick={() => setBuildCompareOpen(true)} className="gap-1.5">
+              <GitCompare className="w-3.5 h-3.5" /> Import & Compare
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={exportProject} className="gap-1.5">
+            <Download className="w-3.5 h-3.5" /> Export Project
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-12 gap-6">
