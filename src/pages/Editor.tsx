@@ -24,6 +24,7 @@ import { analyzeFullGraph } from '@/engine/ruleEngine';
 import type { RuleIssue } from '@/engine/ruleEngine';
 import { AlertCircle, Sparkles, Save, CheckCircle2, Loader2, Power } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 const nodeTypes: NodeTypes = { configNode: ConfigNode };
 const AUTO_SAVE_INTERVAL = 30000;
