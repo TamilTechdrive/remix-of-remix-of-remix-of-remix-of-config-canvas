@@ -292,38 +292,58 @@ const EditorCanvas = () => {
           <NodePalette />
         </div>
 
-        {/* Right panel: Actions */}
-        {selectedNode && showInsights && (
-          <div className="absolute right-0 top-0 bottom-0 z-10 flex">
-            <NodeActionsPanel
-              nodeId={selectedNodeId!}
-              nodes={nodes}
-              edges={edges}
-              rawConfig={SAMPLE_CONFIG}
-              onClose={() => setShowInsights(false)}
-              onFocusNode={onFocusNode}
-              onFixIssue={onFixIssue}
-              onAutoResolveAll={autoResolveAll}
-              onToggleIncluded={onToggleIncluded}
-              onAddUserRule={addUserRule}
-              onRemoveUserRule={removeUserRule}
-              onUpdateNodeMeta={updateNodeMeta}
-            />
-          </div>
-        )}
+        {/* Right panel with tab toggle */}
+        {selectedNode && rightPanel !== 'none' && (
+          <div className="absolute right-0 top-0 bottom-0 z-10 flex flex-col">
+            {/* Panel switcher tabs */}
+            <div className="flex bg-surface-overlay border-b border-l border-border">
+              <button
+                onClick={() => setRightPanel('properties')}
+                className={`px-4 py-2 text-xs font-medium transition-colors ${rightPanel === 'properties' ? 'text-primary border-b-2 border-primary bg-card' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                Properties
+              </button>
+              <button
+                onClick={() => setRightPanel('actions')}
+                className={`px-4 py-2 text-xs font-medium transition-colors ${rightPanel === 'actions' ? 'text-primary border-b-2 border-primary bg-card' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                AI Actions
+              </button>
+            </div>
 
-        {selectedNode && !showInsights && (
-          <div className="absolute right-0 top-0 bottom-0 z-10">
-            <PropertiesPanel
-              nodeId={selectedNodeId!}
-              data={selectedNode.data as unknown as ConfigNodeData}
-              onUpdate={updateNodeData}
-              onClose={() => setSelectedNodeId(null)}
-              onDelete={deleteNode}
-              onAutoAdd={autoAddChild}
-              edges={edges}
-              allNodes={nodes}
-            />
+            {rightPanel === 'actions' && (
+              <div className="flex-1 min-h-0">
+                <NodeActionsPanel
+                  nodeId={selectedNodeId!}
+                  nodes={nodes}
+                  edges={edges}
+                  rawConfig={SAMPLE_CONFIG}
+                  onClose={() => setRightPanel('none')}
+                  onFocusNode={onFocusNode}
+                  onFixIssue={onFixIssue}
+                  onAutoResolveAll={autoResolveAll}
+                  onToggleIncluded={onToggleIncluded}
+                  onAddUserRule={addUserRule}
+                  onRemoveUserRule={removeUserRule}
+                  onUpdateNodeMeta={updateNodeMeta}
+                />
+              </div>
+            )}
+
+            {rightPanel === 'properties' && (
+              <div className="flex-1 min-h-0">
+                <PropertiesPanel
+                  nodeId={selectedNodeId!}
+                  data={selectedNode.data as unknown as ConfigNodeData}
+                  onUpdate={updateNodeData}
+                  onClose={() => setRightPanel('none')}
+                  onDelete={deleteNode}
+                  onAutoAdd={autoAddChild}
+                  edges={edges}
+                  allNodes={nodes}
+                />
+              </div>
+            )}
           </div>
         )}
 
