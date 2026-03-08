@@ -67,7 +67,7 @@ const EditorToolbar = ({ onExport, onImport, onLoadSample, onCompare, nodeCount,
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 shrink-0">
         <div className="flex items-center gap-3 text-[11px] text-muted-foreground font-mono mr-2">
           <span>{nodeCount} nodes</span>
           <span>{edgeCount} edges</span>
