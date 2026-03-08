@@ -66,7 +66,23 @@ const Projects = () => {
     setFormName('');
     setFormDesc('');
     setFormTags('');
+    setSelectedSample(null);
     setCreateOpen(true);
+  };
+
+  const applySample = (sample: SampleProject) => {
+    setSelectedSample(sample);
+    setFormName(sample.name);
+    setFormDesc(sample.description);
+    setFormTags(sample.tags.join(', '));
+    setSampleOpen(false);
+  };
+
+  const clearSample = () => {
+    setSelectedSample(null);
+    setFormName('');
+    setFormDesc('');
+    setFormTags('');
   };
 
   const openEdit = (p: Project) => {
