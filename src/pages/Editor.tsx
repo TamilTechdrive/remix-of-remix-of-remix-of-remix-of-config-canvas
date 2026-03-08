@@ -23,6 +23,7 @@ import { SAMPLE_CONFIG } from '@/data/sampleConfig';
 import { analyzeFullGraph } from '@/engine/ruleEngine';
 import type { RuleIssue } from '@/engine/ruleEngine';
 import { AlertCircle, Sparkles, Save, CheckCircle2, Loader2, Power } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
