@@ -227,6 +227,84 @@ const EditorCanvas = () => {
     if (ok) onFixIssue(issue);
   }, [confirm, onFixIssue]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+
+      if (e.key === 'Escape') {
+        setRightPanel('none');
+        setSelectedNodeId(null);
+      } else if (e.key === 'p' || e.key === 'P') {
+        if (selectedNodeId) setRightPanel((prev) => prev === 'properties' ? 'none' : 'properties');
+      } else if (e.key === 'a' || e.key === 'A') {
+        if (selectedNodeId) setRightPanel((prev) => prev === 'actions' ? 'none' : 'actions');
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNodeId && rightPanel === 'none') {
+        confirmedDeleteNode(selectedNodeId);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedNodeId, rightPanel, setSelectedNodeId, confirmedDeleteNode]);
+
+  const graphAnalysis = useMemo(
+    () => analyzeFullGraph(nodes, edges, SAMPLE_CONFIG),
+    [nodes, edges]
+  );
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      const type = event.dataTransfer.getData('application/reactflow') as ConfigNodeType;
+      if (!type) return;
+      const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      addNode(type, position);
+    },
+    [addNode, screenToFlowPosition]
+  );
+
+  const [contextMenu, setContextMenu] = useState<ContextMenuState>({ show: false, x: 0, y: 0, nodeId: null });
+
+  const onNodeClick = useCallback(
+    (_: React.MouseEvent, node: { id: string }) => {
+      setSelectedNodeId(node.id);
+      setRightPanel((prev) => prev === 'none' ? 'properties' : prev);
+    },
+    [setSelectedNodeId]
+  );
+
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: { id: string }) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setContextMenu({ show: true, x: event.clientX, y: event.clientY, nodeId: node.id });
+    },
+    []
+  );
+
+  const onPaneClick = useCallback(() => {
+    setSelectedNodeId(null);
+    setRightPanel('none');
+  }, [setSelectedNodeId]);
+
+  const onFocusNode = useCallback(
+    (nodeId: string) => {
+      const node = nodes.find((n) => n.id === nodeId);
+      if (node) {
+        setCenter(node.position.x + 100, node.position.y + 50, { zoom: 1.5, duration: 500 });
+        setSelectedNodeId(nodeId);
+        setRightPanel('actions');
+      }
+    },
+    [nodes, setCenter, setSelectedNodeId]
+  );
+
   const onToggleVisible = useCallback(
     (nodeId: string) => {
       const node = nodes.find((n) => n.id === nodeId);
@@ -281,8 +359,8 @@ const EditorCanvas = () => {
 
       <EditorToolbar
         onExport={exportConfig}
-        onImport={importConfig}
-        onLoadSample={loadSampleData}
+        onImport={confirmedImport}
+        onLoadSample={confirmedLoadSample}
         nodeCount={nodes.length}
         edgeCount={edges.length}
         onCloudSave={() => {
@@ -368,11 +446,11 @@ const EditorCanvas = () => {
                   rawConfig={SAMPLE_CONFIG}
                   onClose={() => setRightPanel('none')}
                   onFocusNode={onFocusNode}
-                  onFixIssue={onFixIssue}
+                  onFixIssue={confirmedFixIssue}
                   onAutoResolveAll={confirmedAutoResolveAll}
-                  onToggleIncluded={onToggleIncluded}
+                  onToggleIncluded={confirmedToggleIncluded}
                   onAddUserRule={addUserRule}
-                  onRemoveUserRule={removeUserRule}
+                  onRemoveUserRule={confirmedRemoveUserRule}
                   onUpdateNodeMeta={updateNodeMeta}
                 />
               </div>
@@ -402,12 +480,12 @@ const EditorCanvas = () => {
           edges={edges}
           onClose={() => setContextMenu({ show: false, x: 0, y: 0, nodeId: null })}
           onDelete={confirmedDeleteNode}
-          onToggleIncluded={onToggleIncluded}
+          onToggleIncluded={confirmedToggleIncluded}
           onToggleVisible={onToggleVisible}
           onFocusNode={onFocusNode}
           onShowInsights={(nodeId) => { setSelectedNodeId(nodeId); setRightPanel('actions'); }}
           onDisconnectAll={confirmedDisconnectAll}
-          onDisconnectEdge={disconnectEdge}
+          onDisconnectEdge={confirmedDisconnectEdge}
           onCopyNodeId={(nodeId) => { navigator.clipboard.writeText(nodeId); toast.success('Node ID copied'); }}
         />
       </div>
