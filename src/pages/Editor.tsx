@@ -36,7 +36,7 @@ const EditorCanvas = () => {
     deleteNode, setSelectedNodeId,
     exportConfig, importConfig, loadSampleData, autoResolveAll,
     addUserRule, removeUserRule, updateNodeMeta,
-    disconnectAllEdges,
+    disconnectAllEdges, disconnectEdge,
   } = useConfigEditor();
 
   const [showInsights, setShowInsights] = useState(false);
