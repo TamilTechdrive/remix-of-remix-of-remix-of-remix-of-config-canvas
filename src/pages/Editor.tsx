@@ -45,7 +45,7 @@ const EditorCanvas = ({ initialNodes, initialEdges, onSave }: EditorCanvasProps)
     deleteNode, setSelectedNodeId,
     exportConfig, importConfig, loadSampleData, autoResolveAll,
     addUserRule, removeUserRule, updateNodeMeta,
-    disconnectAllEdges, disconnectEdge,
+    disconnectAllEdges, disconnectEdge, replaceAll,
   } = useConfigEditor(initialNodes !== undefined ? { initialNodes, initialEdges } : undefined);
 
   const { confirm, ConfirmDialog } = useConfirmDialog();
