@@ -34,6 +34,18 @@ const NodeContextMenu = ({
 }: NodeContextMenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [showConnections, setShowConnections] = useState(false);
+  const [adjustedPos, setAdjustedPos] = useState({ x: state.x, y: state.y });
+
+  useEffect(() => {
+    if (!state.show || !menuRef.current) return;
+    const rect = menuRef.current.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    setAdjustedPos({
+      x: state.x + rect.width > vw ? Math.max(0, vw - rect.width - 8) : state.x,
+      y: state.y + rect.height > vh ? Math.max(0, vh - rect.height - 8) : state.y,
+    });
+  }, [state.show, state.x, state.y]);
 
   useEffect(() => {
     if (!state.show) return;
