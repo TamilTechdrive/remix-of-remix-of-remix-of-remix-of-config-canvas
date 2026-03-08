@@ -208,6 +208,11 @@ export const useConfigEditor = () => {
     toast.info('Disconnected', { description: 'All connections removed from this node' });
   }, []);
 
+  const disconnectEdge = useCallback((edgeId: string) => {
+    setEdges((eds) => eds.filter((e) => e.id !== edgeId));
+    toast.info('Connection removed');
+  }, []);
+
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
   // ── Export helpers ──────────────────────────────
@@ -421,6 +426,7 @@ th{color:#4dd68e;font-size:.8rem;text-transform:uppercase}
     removeUserRule,
     updateNodeMeta,
     disconnectAllEdges,
+    disconnectEdge,
   };
 };
 

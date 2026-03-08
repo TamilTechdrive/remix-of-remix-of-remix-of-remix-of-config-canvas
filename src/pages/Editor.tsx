@@ -36,7 +36,7 @@ const EditorCanvas = () => {
     deleteNode, setSelectedNodeId,
     exportConfig, importConfig, loadSampleData, autoResolveAll,
     addUserRule, removeUserRule, updateNodeMeta,
-    disconnectAllEdges,
+    disconnectAllEdges, disconnectEdge,
   } = useConfigEditor();
 
   const [showInsights, setShowInsights] = useState(false);
@@ -336,6 +336,7 @@ const EditorCanvas = () => {
           onFocusNode={onFocusNode}
           onShowInsights={(nodeId) => { setSelectedNodeId(nodeId); setShowInsights(true); }}
           onDisconnectAll={disconnectAllEdges}
+          onDisconnectEdge={disconnectEdge}
           onCopyNodeId={(nodeId) => { navigator.clipboard.writeText(nodeId); toast.success('Node ID copied'); }}
         />
       </div>
