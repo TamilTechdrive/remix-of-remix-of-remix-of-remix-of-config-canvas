@@ -379,7 +379,7 @@ const EditorCanvas = () => {
                   onClose={() => setRightPanel('none')}
                   onFocusNode={onFocusNode}
                   onFixIssue={onFixIssue}
-                  onAutoResolveAll={autoResolveAll}
+                  onAutoResolveAll={confirmedAutoResolveAll}
                   onToggleIncluded={onToggleIncluded}
                   onAddUserRule={addUserRule}
                   onRemoveUserRule={removeUserRule}
