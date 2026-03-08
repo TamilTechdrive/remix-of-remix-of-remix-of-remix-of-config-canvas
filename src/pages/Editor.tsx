@@ -361,6 +361,16 @@ const EditorCanvas = ({ initialNodes, initialEdges, onSave }: EditorCanvasProps)
             <><Save className="w-3 h-3 text-primary/60" /><span className="text-primary/60">Auto-save</span></>
           )}
         </button>
+        {onSave && (
+          <Button
+            variant="default"
+            size="sm"
+            className="h-6 text-xs gap-1 ml-2"
+            onClick={() => onSave(nodes, edges)}
+          >
+            <Save className="w-3 h-3" /> Save Module
+          </Button>
+        )}
       </div>
 
       <EditorToolbar
