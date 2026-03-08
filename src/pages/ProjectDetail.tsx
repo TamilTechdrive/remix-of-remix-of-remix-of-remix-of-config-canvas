@@ -30,6 +30,7 @@ import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import type { Build, BuildModule, ModuleType, STBModel } from '@/types/projectTypes';
 import { BUILD_STATUS_META, MODULE_TYPE_META, PROJECT_STATUS_META } from '@/types/projectTypes';
 import { toast } from 'sonner';
+import ImportCompareDialog from '@/components/editor/ImportCompareDialog';
 
 const ProjectDetail = () => {
   const { projectId } = useParams<{ projectId: string }>();
