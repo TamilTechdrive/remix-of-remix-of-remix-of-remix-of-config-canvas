@@ -20,8 +20,8 @@ const EditorToolbar = ({ onExport, onImport, onLoadSample, onCompare, nodeCount,
   const { zoomIn, zoomOut, fitView } = useReactFlow();
 
   return (
-    <div className="h-11 bg-surface-overlay border-b border-border flex items-center px-3 gap-1 justify-between">
-      <div className="flex items-center gap-1">
+    <div className="h-11 bg-surface-overlay border-b border-border flex items-center px-3 gap-1 justify-between overflow-x-auto overflow-y-hidden shrink-0">
+      <div className="flex items-center gap-1 shrink-0">
         <div className="flex items-center mr-3">
           <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center mr-2">
             <span className="text-primary text-xs font-bold">C</span>
@@ -67,7 +67,7 @@ const EditorToolbar = ({ onExport, onImport, onLoadSample, onCompare, nodeCount,
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 shrink-0">
         <div className="flex items-center gap-3 text-[11px] text-muted-foreground font-mono mr-2">
           <span>{nodeCount} nodes</span>
           <span>{edgeCount} edges</span>
