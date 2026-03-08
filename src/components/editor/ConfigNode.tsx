@@ -94,7 +94,7 @@ const ConfigNode = ({ id, data, selected }: NodeProps) => {
 
       {/* Health badges */}
       {(errorCount > 0 || warningCount > 0) && (
-        <div className="absolute -top-2 right-5 z-10 flex gap-0.5">
+        <div className="absolute -top-3 right-5 z-30 flex gap-0.5">
           {errorCount > 0 && (
             <span className="flex items-center gap-0.5 bg-destructive text-destructive-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full">
               <AlertCircle className="w-2.5 h-2.5" />
