@@ -79,7 +79,7 @@ const ConfigNode = ({ id, data, selected }: NodeProps) => {
       </button>
 
       {/* Top-left: Include/Exclude badge for ALL node types */}
-      <div className="absolute -top-2 -left-2 z-10">
+      <div className="absolute -top-3 -left-2 z-30">
         {isIncluded && (
           <span className="flex items-center gap-0.5 bg-node-module text-primary-foreground text-[8px] font-bold px-1.5 py-0.5 rounded-full">
             <Power className="w-2.5 h-2.5" /> ON
