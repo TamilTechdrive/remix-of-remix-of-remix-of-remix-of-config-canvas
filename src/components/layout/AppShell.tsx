@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard, Settings, BarChart3, Users, Shield, User,
   LogOut, ChevronLeft, ChevronRight, Workflow, Menu, X, Bell,
-  Zap, FolderOpen,
+  Zap, FolderOpen, FileCode,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
