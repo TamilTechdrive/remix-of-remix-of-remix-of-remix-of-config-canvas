@@ -15,6 +15,7 @@ import userRoutes from './routes/user.routes.js';
 import configRoutes from './routes/config.routes.js';
 import configDataRoutes from './routes/configData.routes.js';
 import auditRoutes from './routes/audit.routes.js';
+import parserRoutes from './routes/parser.routes.js';
 
 const app = express();
 
