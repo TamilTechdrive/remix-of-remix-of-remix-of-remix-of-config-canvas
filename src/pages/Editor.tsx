@@ -24,6 +24,7 @@ import { analyzeFullGraph } from '@/engine/ruleEngine';
 import { useSearchParams } from 'react-router-dom';
 import { sessionDetailToRawConfig } from '@/data/parserToConfig';
 import api, { projectApi } from '@/services/api';
+import type { RuleIssue } from '@/engine/ruleEngine';
 import { AlertCircle, Sparkles, Save, CheckCircle2, Loader2, Power } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
