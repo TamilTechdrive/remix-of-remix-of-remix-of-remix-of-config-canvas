@@ -156,6 +156,24 @@ export const configApi = {
   delete: (id: string) => api.delete(`/configurations/${id}`),
 };
 
+// ===== PROJECT API =====
+export const projectApi = {
+  list: () => api.get('/projects'),
+  get: (id: string) => api.get(`/projects/${id}`),
+  create: (data: { name: string; description?: string; tags?: string[] }) =>
+    api.post('/projects', data),
+  createSTBModel: (projectId: string, data: { name: string; description?: string; chipset?: string }) =>
+    api.post(`/projects/${projectId}/stb-models`, data),
+  createBuild: (modelId: string, data: { name: string; description?: string; version?: string }) =>
+    api.post(`/projects/stb-models/${modelId}/builds`, data),
+  saveParserConfig: (buildId: string, data: { parserSessionId?: string; configName: string; nodes: any[]; edges: any[] }) =>
+    api.post(`/projects/builds/${buildId}/save-parser-config`, data),
+  loadConfig: (configId: string) =>
+    api.get(`/projects/configurations/${configId}/full`),
+  listBuildConfigs: (buildId: string) =>
+    api.get(`/projects/builds/${buildId}/configurations`),
+};
+
 // ===== USER API =====
 export const userApi = {
   list: () => api.get('/users'),
