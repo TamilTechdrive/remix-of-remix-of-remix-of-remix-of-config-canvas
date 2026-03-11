@@ -212,6 +212,17 @@ export default function ParserData() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/editor?parserSession=${s.id}`);
+                      }}
+                      title="Load in Config Editor"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-1" /> Editor
+                    </Button>
                     <span className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString()}</span>
                     <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(s.id); }}>
                       <Trash2 className="h-4 w-4 text-destructive" />
