@@ -23,7 +23,7 @@ import { SAMPLE_CONFIG } from '@/data/sampleConfig';
 import { analyzeFullGraph } from '@/engine/ruleEngine';
 import { useSearchParams } from 'react-router-dom';
 import { sessionDetailToRawConfig } from '@/data/parserToConfig';
-import api from '@/services/api';
+import api, { projectApi } from '@/services/api';
 import type { RuleIssue } from '@/engine/ruleEngine';
 import { AlertCircle, Sparkles, Save, CheckCircle2, Loader2, Power } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -53,8 +53,9 @@ const EditorCanvas = ({ initialNodes, initialEdges, onSave }: EditorCanvasProps)
 
   const [searchParams] = useSearchParams();
   const parserSessionId = searchParams.get('parserSession');
+  const configId = searchParams.get('configId');
 
-  // Load parser session data if parserSession query param is present
+  // Load parser session data (preview mode - not persisted)
   useEffect(() => {
     if (!parserSessionId) return;
     const loadParserData = async () => {
@@ -68,6 +69,24 @@ const EditorCanvas = ({ initialNodes, initialEdges, onSave }: EditorCanvasProps)
     };
     loadParserData();
   }, [parserSessionId]);
+
+  // Load persisted config from DB (real data mode)
+  useEffect(() => {
+    if (!configId) return;
+    const loadConfigFromDB = async () => {
+      try {
+        const res = await projectApi.loadConfig(configId);
+        const { nodes: dbNodes, edges: dbEdges, config } = res.data;
+        if (dbNodes?.length) {
+          replaceAll(dbNodes, dbEdges || []);
+          toast.success('Config Loaded from DB', { description: `${config.name} — ${dbNodes.length} nodes` });
+        }
+      } catch (err) {
+        toast.error('Failed to load configuration from database');
+      }
+    };
+    loadConfigFromDB();
+  }, [configId]);
 
   const { confirm, ConfirmDialog } = useConfirmDialog();
 
