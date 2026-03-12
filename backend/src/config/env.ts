@@ -1,6 +1,12 @@
 import { z } from 'zod';
-import dotenv from 'dotenv';
-dotenv.config();
+
+// Load .env file if available (dotenv is optional, works without it if env vars are set externally)
+try {
+  const dotenv = await import('dotenv');
+  dotenv.config();
+} catch {
+  // dotenv not installed, rely on environment variables being set externally
+}
 
 const envSchema = z.object({
   PORT: z.coerce.number().default(4000),

@@ -156,22 +156,71 @@ export const configApi = {
   delete: (id: string) => api.delete(`/configurations/${id}`),
 };
 
+// ===== CONFIG DATA API (nodes/edges/snapshots) =====
+export const configDataApi = {
+  saveFull: (id: string, data: { nodes: any[]; edges: any[] }) =>
+    api.post(`/config-data/${id}/save-full`, data),
+
+  loadFull: (id: string) =>
+    api.get(`/config-data/${id}/load-full`),
+
+  createSnapshot: (id: string, data: { name?: string; description?: string }) =>
+    api.post(`/config-data/${id}/snapshots`, data),
+
+  listSnapshots: (id: string) =>
+    api.get(`/config-data/${id}/snapshots`),
+
+  restoreSnapshot: (configId: string, snapshotId: string) =>
+    api.post(`/config-data/${configId}/snapshots/${snapshotId}/restore`),
+};
+
 // ===== PROJECT API =====
 export const projectApi = {
   list: () => api.get('/projects'),
   get: (id: string) => api.get(`/projects/${id}`),
   create: (data: { name: string; description?: string; tags?: string[] }) =>
     api.post('/projects', data),
+  update: (id: string, data: { name?: string; description?: string; tags?: string[]; status?: string }) =>
+    api.put(`/projects/${id}`, data),
+  delete: (id: string) => api.delete(`/projects/${id}`),
+
+  // STB Models
   createSTBModel: (projectId: string, data: { name: string; description?: string; chipset?: string }) =>
     api.post(`/projects/${projectId}/stb-models`, data),
+  updateSTBModel: (modelId: string, data: { name?: string; description?: string; chipset?: string }) =>
+    api.put(`/projects/stb-models/${modelId}`, data),
+  deleteSTBModel: (modelId: string) =>
+    api.delete(`/projects/stb-models/${modelId}`),
+
+  // Builds
   createBuild: (modelId: string, data: { name: string; description?: string; version?: string }) =>
     api.post(`/projects/stb-models/${modelId}/builds`, data),
+  updateBuild: (buildId: string, data: { name?: string; description?: string; version?: string; status?: string }) =>
+    api.put(`/projects/builds/${buildId}`, data),
+  deleteBuild: (buildId: string) =>
+    api.delete(`/projects/builds/${buildId}`),
+
+  // Parser config save/load
   saveParserConfig: (buildId: string, data: { parserSessionId?: string; configName: string; nodes: any[]; edges: any[] }) =>
     api.post(`/projects/builds/${buildId}/save-parser-config`, data),
   loadConfig: (configId: string) =>
     api.get(`/projects/configurations/${configId}/full`),
   listBuildConfigs: (buildId: string) =>
     api.get(`/projects/builds/${buildId}/configurations`),
+};
+
+// ===== PARSER API =====
+export const parserApi = {
+  seed: (data?: { jsonData?: any; sessionName?: string }) =>
+    api.post('/parser/seed', data || {}),
+  listSessions: () =>
+    api.get('/parser/sessions'),
+  getSession: (id: string) =>
+    api.get(`/parser/sessions/${id}`),
+  deleteSession: (id: string) =>
+    api.delete(`/parser/sessions/${id}`),
+  exportSession: (id: string, sheet?: string) =>
+    api.get(`/parser/sessions/${id}/export`, { params: { sheet }, responseType: 'blob' }),
 };
 
 // ===== USER API =====

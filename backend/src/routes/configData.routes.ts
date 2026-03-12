@@ -1,15 +1,15 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../database/connection.js';
-import { requireAuth, requirePermission } from '../middleware/auth.middleware.js';
+import { authenticate, requirePermission } from '../middleware/auth.middleware.js';
 import { logger } from '../utils/logger.js';
 
 const router = Router();
 
 // ── Save full config with nodes and edges ──
-router.post('/:id/save-full', requireAuth, async (req: Request, res: Response) => {
+router.post('/:id/save-full', authenticate, async (req: Request, res: Response) => {
   const { id } = req.params;
   const { nodes, edges } = req.body;
-  const userId = (req as any).user.id;
+  const userId = req.user!.userId;
 
   try {
     await db.transaction(async (trx) => {
@@ -70,7 +70,7 @@ router.post('/:id/save-full', requireAuth, async (req: Request, res: Response) =
       await trx('audit_logs').insert({
         user_id: userId,
         event: 'CONFIG_FULL_SAVE',
-        resource_type: 'configuration',
+        resource: 'configuration',
         resource_id: id,
         details: JSON.stringify({ nodeCount: nodes?.length || 0, edgeCount: edges?.length || 0 }),
         ip_address: req.ip,
@@ -86,7 +86,7 @@ router.post('/:id/save-full', requireAuth, async (req: Request, res: Response) =
 });
 
 // ── Load full config with nodes and edges ──
-router.get('/:id/load-full', requireAuth, async (req: Request, res: Response) => {
+router.get('/:id/load-full', authenticate, async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
@@ -144,10 +144,10 @@ router.get('/:id/load-full', requireAuth, async (req: Request, res: Response) =>
 });
 
 // ── Create snapshot ──
-router.post('/:id/snapshots', requireAuth, async (req: Request, res: Response) => {
+router.post('/:id/snapshots', authenticate, async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, description } = req.body;
-  const userId = (req as any).user.id;
+  const userId = req.user!.userId;
 
   try {
     const nodes = await db('config_nodes').where({ configuration_id: id });
@@ -172,7 +172,7 @@ router.post('/:id/snapshots', requireAuth, async (req: Request, res: Response) =
 });
 
 // ── List snapshots ──
-router.get('/:id/snapshots', requireAuth, async (req: Request, res: Response) => {
+router.get('/:id/snapshots', authenticate, async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const snapshots = await db('config_snapshots')
@@ -186,7 +186,7 @@ router.get('/:id/snapshots', requireAuth, async (req: Request, res: Response) =>
 });
 
 // ── Restore snapshot ──
-router.post('/:id/snapshots/:snapshotId/restore', requireAuth, async (req: Request, res: Response) => {
+router.post('/:id/snapshots/:snapshotId/restore', authenticate, async (req: Request, res: Response) => {
   const { id, snapshotId } = req.params;
 
   try {

@@ -1,15 +1,15 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../database/connection.js';
-import { requireAuth } from '../middleware/auth.middleware.js';
+import { authenticate } from '../middleware/auth.middleware.js';
 import { logger } from '../utils/logger.js';
 import { v4 as uuid } from 'uuid';
 
 const router = Router();
-router.use(requireAuth);
+router.use(authenticate);
 
 // ── LIST PROJECTS ──
 router.get('/', async (req: Request, res: Response) => {
-  const userId = (req as any).user.id;
+  const userId = req.user!.userId;
   try {
     const projects = await db('projects').where({ owner_id: userId }).orderBy('updated_at', 'desc');
     res.json(projects);
@@ -20,7 +20,7 @@ router.get('/', async (req: Request, res: Response) => {
 
 // ── CREATE PROJECT ──
 router.post('/', async (req: Request, res: Response) => {
-  const userId = (req as any).user.id;
+  const userId = req.user!.userId;
   const { name, description, tags } = req.body;
   try {
     const [project] = await db('projects').insert({
@@ -60,6 +60,39 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
+// ── UPDATE PROJECT ──
+router.put('/:id', async (req: Request, res: Response) => {
+  const userId = req.user!.userId;
+  const { name, description, tags, status } = req.body;
+  try {
+    const project = await db('projects').where({ id: req.params.id, owner_id: userId }).first();
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    const updates: Record<string, unknown> = {};
+    if (name) updates.name = name;
+    if (description !== undefined) updates.description = description;
+    if (tags) updates.tags = JSON.stringify(tags);
+    if (status) updates.status = status;
+
+    await db('projects').where({ id: req.params.id }).update(updates);
+    res.json({ message: 'Project updated' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update project' });
+  }
+});
+
+// ── DELETE PROJECT ──
+router.delete('/:id', async (req: Request, res: Response) => {
+  const userId = req.user!.userId;
+  try {
+    const deleted = await db('projects').where({ id: req.params.id, owner_id: userId }).del();
+    if (!deleted) return res.status(404).json({ error: 'Project not found' });
+    res.json({ message: 'Project deleted' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete project' });
+  }
+});
+
 // ── CREATE STB MODEL ──
 router.post('/:projectId/stb-models', async (req: Request, res: Response) => {
   const { name, description, chipset } = req.body;
@@ -74,6 +107,33 @@ router.post('/:projectId/stb-models', async (req: Request, res: Response) => {
     res.status(201).json(model);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create STB model' });
+  }
+});
+
+// ── UPDATE STB MODEL ──
+router.put('/stb-models/:modelId', async (req: Request, res: Response) => {
+  const { name, description, chipset } = req.body;
+  try {
+    const updates: Record<string, unknown> = {};
+    if (name) updates.name = name;
+    if (description !== undefined) updates.description = description;
+    if (chipset !== undefined) updates.chipset = chipset;
+
+    await db('stb_models').where({ id: req.params.modelId }).update(updates);
+    res.json({ message: 'STB model updated' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update STB model' });
+  }
+});
+
+// ── DELETE STB MODEL ──
+router.delete('/stb-models/:modelId', async (req: Request, res: Response) => {
+  try {
+    const deleted = await db('stb_models').where({ id: req.params.modelId }).del();
+    if (!deleted) return res.status(404).json({ error: 'STB model not found' });
+    res.json({ message: 'STB model deleted' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete STB model' });
   }
 });
 
@@ -94,10 +154,37 @@ router.post('/stb-models/:modelId/builds', async (req: Request, res: Response) =
   }
 });
 
+// ── UPDATE BUILD ──
+router.put('/builds/:buildId', async (req: Request, res: Response) => {
+  const { name, description, version, status } = req.body;
+  try {
+    const updates: Record<string, unknown> = {};
+    if (name) updates.name = name;
+    if (description !== undefined) updates.description = description;
+    if (version) updates.version = version;
+    if (status) updates.status = status;
+
+    await db('builds').where({ id: req.params.buildId }).update(updates);
+    res.json({ message: 'Build updated' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update build' });
+  }
+});
+
+// ── DELETE BUILD ──
+router.delete('/builds/:buildId', async (req: Request, res: Response) => {
+  try {
+    const deleted = await db('builds').where({ id: req.params.buildId }).del();
+    if (!deleted) return res.status(404).json({ error: 'Build not found' });
+    res.json({ message: 'Build deleted' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete build' });
+  }
+});
+
 // ── SAVE PARSER SESSION AS CONFIG TO BUILD ──
-// Converts parser session → RawConfig → normalized nodes/edges → DB
 router.post('/builds/:buildId/save-parser-config', async (req: Request, res: Response) => {
-  const userId = (req as any).user.id;
+  const userId = req.user!.userId;
   const { buildId } = req.params;
   const { parserSessionId, configName, nodes, edges } = req.body;
 

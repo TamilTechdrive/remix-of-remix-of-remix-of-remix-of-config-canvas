@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../database/connection.js';
-import { requireAuth } from '../middleware/auth.middleware.js';
+import { authenticate } from '../middleware/auth.middleware.js';
 import { logger } from '../utils/logger.js';
 import { v4 as uuid } from 'uuid';
 import fs from 'fs';
@@ -69,8 +69,8 @@ interface ParserJSON {
 }
 
 // ── Seed from uploaded JSON or built-in sample ──
-router.post('/seed', requireAuth, async (req: Request, res: Response) => {
-  const userId = (req as any).user?.id || null;
+router.post('/seed', authenticate, async (req: Request, res: Response) => {
+  const userId = req.user!.userId;
   const { jsonData, sessionName } = req.body;
 
   let parserData: ParserJSON;
@@ -237,7 +237,7 @@ router.post('/seed', requireAuth, async (req: Request, res: Response) => {
 });
 
 // ── List sessions ──
-router.get('/sessions', requireAuth, async (_req: Request, res: Response) => {
+router.get('/sessions', authenticate, async (_req: Request, res: Response) => {
   try {
     const sessions = await db('parser_sessions').orderBy('created_at', 'desc');
     res.json(sessions);
@@ -247,7 +247,7 @@ router.get('/sessions', requireAuth, async (_req: Request, res: Response) => {
 });
 
 // ── Get session detail ──
-router.get('/sessions/:id', requireAuth, async (req: Request, res: Response) => {
+router.get('/sessions/:id', authenticate, async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const session = await db('parser_sessions').where({ id }).first();
@@ -279,7 +279,7 @@ router.get('/sessions/:id', requireAuth, async (req: Request, res: Response) => 
 });
 
 // ── Delete session ──
-router.delete('/sessions/:id', requireAuth, async (req: Request, res: Response) => {
+router.delete('/sessions/:id', authenticate, async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     await db('parser_sessions').where({ id }).del();
@@ -290,7 +290,7 @@ router.delete('/sessions/:id', requireAuth, async (req: Request, res: Response) 
 });
 
 // ── Export session as Excel-compatible CSV ──
-router.get('/sessions/:id/export', requireAuth, async (req: Request, res: Response) => {
+router.get('/sessions/:id/export', authenticate, async (req: Request, res: Response) => {
   const { id } = req.params;
   const { sheet } = req.query; // processedFiles | includedFiles | defineVars | summary
 
