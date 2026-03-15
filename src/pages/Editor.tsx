@@ -496,6 +496,13 @@ const EditorCanvas = ({ initialNodes, initialEdges, onSave }: EditorCanvasProps)
               >
                 AI Actions
               </button>
+              <button
+                onClick={() => setRightPanel('source')}
+                className={`px-3 py-2 text-xs font-medium transition-colors flex items-center gap-1 ${rightPanel === 'source' ? 'text-primary border-b-2 border-primary bg-card' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <FileCode className="w-3 h-3" />
+                Source
+              </button>
             </div>
 
             {rightPanel === 'actions' && (
