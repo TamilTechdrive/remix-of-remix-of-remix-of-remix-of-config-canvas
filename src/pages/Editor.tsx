@@ -538,6 +538,18 @@ const EditorCanvas = ({ initialNodes, initialEdges, onSave }: EditorCanvasProps)
                 />
               </div>
             )}
+
+            {rightPanel === 'source' && (
+              <div className="flex-1 min-h-0">
+                <SourceInfoPanel
+                  nodeId={selectedNodeId!}
+                  nodes={nodes}
+                  edges={edges}
+                  onClose={() => setRightPanel('none')}
+                  onFocusNode={onFocusNode}
+                />
+              </div>
+            )}
           </div>
         )}
 
