@@ -152,15 +152,16 @@ const RelationCard = ({
 };
 
 const SourceInfoPanel = ({ nodeId, nodes, edges, onClose, onFocusNode }: SourceInfoPanelProps) => {
+  const { parents, children, siblings } = useMemo(
+    () => getRelationships(nodeId, nodes, edges),
+    [nodeId, nodes, edges]
+  );
+
   const node = nodes.find((n) => n.id === nodeId);
   if (!node) return null;
 
   const data = node.data as unknown as ConfigNodeData;
   const src = getSourceInfo(data);
-  const { parents, children, siblings } = useMemo(
-    () => getRelationships(nodeId, nodes, edges),
-    [nodeId, nodes, edges]
-  );
 
   const totalConnections = parents.length + children.length + siblings.length;
   const disabledParents = parents.filter((p) => !p.included);

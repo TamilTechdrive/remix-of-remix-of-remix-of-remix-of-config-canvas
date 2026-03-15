@@ -110,15 +110,16 @@ const RelSection = ({ icon: Icon, title, items, color }: { icon: React.ElementTy
 };
 
 const NodeSourceTooltip = ({ nodeId, nodes, edges }: NodeSourceTooltipProps) => {
+  const { parents, children, siblings } = useMemo(
+    () => getRelationships(nodeId, nodes, edges),
+    [nodeId, nodes, edges]
+  );
+
   const node = nodes.find((n) => n.id === nodeId);
   if (!node) return null;
 
   const data = node.data as unknown as ConfigNodeData;
   const src = getSourceInfo(data);
-  const { parents, children, siblings } = useMemo(
-    () => getRelationships(nodeId, nodes, edges),
-    [nodeId, nodes, edges]
-  );
 
   const DiagIcon = diagIcon[src.diagnosticLevel] || Info;
   const hasSourceInfo = src.sourceFile || src.sourceModule;
