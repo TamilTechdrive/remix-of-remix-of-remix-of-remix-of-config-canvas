@@ -92,7 +92,7 @@ const EditorCanvas = ({ initialNodes, initialEdges, onSave }: EditorCanvasProps)
   const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const [compareOpen, setCompareOpen] = useState(false);
-  const [rightPanel, setRightPanel] = useState<'none' | 'actions' | 'properties'>('none');
+  const [rightPanel, setRightPanel] = useState<'none' | 'actions' | 'properties' | 'source'>('none');
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
     const stored = localStorage.getItem('configflow_autosave_enabled');
     return stored !== null ? stored === 'true' : true;
