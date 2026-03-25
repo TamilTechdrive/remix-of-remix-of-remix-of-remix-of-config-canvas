@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, Lock, Mail, ArrowRight, Shield, Fingerprint, Server, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import ApiSettingsPanel from '@/components/settings/ApiSettingsPanel';
 
 const Login = () => {
   const [email, setEmail] = useState('');
