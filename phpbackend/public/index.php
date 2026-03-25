@@ -2,6 +2,7 @@
 /**
  * ConfigFlow PHP Backend - Entry Point
  * PHP 7.4 Compatible
+ * Includes security flag, all API routes, and config-data aliases
  */
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -34,12 +35,14 @@ $app->addErrorMiddleware(
 $app->get('/api/health', function ($request, $response) {
     $db = Database::getInstance();
     $dbOk = $db->testConnection();
+    $securityEnabled = Env::get('SECURITY_ENABLED', 'true');
     $data = [
         'status' => $dbOk ? 'healthy' : 'degraded',
         'timestamp' => date('c'),
         'database' => $dbOk ? 'connected' : 'disconnected',
         'version' => '1.0.0',
         'runtime' => 'PHP ' . PHP_VERSION,
+        'securityEnabled' => !($securityEnabled === 'false' || $securityEnabled === '0'),
     ];
     $response->getBody()->write(json_encode($data));
     return $response
@@ -106,6 +109,15 @@ $app->group('/api/configurations', function (RouteCollectorProxy $group) {
     $group->post('/{configId}/snapshots/{snapshotId}/restore', 'App\Routes\ConfigRoutes:restoreSnapshot');
 })->add(new AuthMiddleware());
 
+// ── Config Data Routes (alias for Node.js compatibility) ──
+$app->group('/api/config-data', function (RouteCollectorProxy $group) {
+    $group->post('/{id}/save-full', 'App\Routes\ConfigRoutes:saveFull');
+    $group->get('/{id}/load-full', 'App\Routes\ConfigRoutes:loadFull');
+    $group->post('/{id}/snapshots', 'App\Routes\ConfigRoutes:createSnapshot');
+    $group->get('/{id}/snapshots', 'App\Routes\ConfigRoutes:listSnapshots');
+    $group->post('/{configId}/snapshots/{snapshotId}/restore', 'App\Routes\ConfigRoutes:restoreSnapshot');
+})->add(new AuthMiddleware());
+
 // ── User Routes ──
 $app->group('/api/users', function (RouteCollectorProxy $group) {
     $group->get('', 'App\Routes\UserRoutes:list');
@@ -113,6 +125,8 @@ $app->group('/api/users', function (RouteCollectorProxy $group) {
     $group->patch('/{id}', 'App\Routes\UserRoutes:update');
     $group->post('/{id}/roles', 'App\Routes\UserRoutes:assignRole');
     $group->delete('/{id}/roles/{roleName}', 'App\Routes\UserRoutes:removeRole');
+    $group->post('/{id}/unlock', 'App\Routes\UserRoutes:unlock');
+    $group->get('/{id}/devices', 'App\Routes\UserRoutes:devices');
 })->add(new AuthMiddleware());
 
 // ── Audit Routes ──

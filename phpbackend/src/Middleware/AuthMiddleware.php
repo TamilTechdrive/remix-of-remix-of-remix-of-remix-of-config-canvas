@@ -1,6 +1,7 @@
 <?php
 /**
- * JWT Auth Middleware - PHP 7.4 compatible
+ * Conditional Auth Middleware - PHP 7.4 compatible
+ * When SECURITY_ENABLED=false, bypasses JWT check and sets a default user.
  */
 
 namespace App\Middleware;
@@ -10,12 +11,22 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
 use App\Services\AuthService;
+use App\Config\Env;
 use Slim\Psr7\Response as SlimResponse;
 
 class AuthMiddleware implements MiddlewareInterface
 {
     public function process(Request $request, RequestHandler $handler): Response
     {
+        // Check security flag
+        $securityEnabled = Env::get('SECURITY_ENABLED', 'true');
+        if ($securityEnabled === 'false' || $securityEnabled === '0') {
+            // Security disabled: set a default user and proceed
+            $request = $request->withAttribute('userId', 'noauth-001');
+            $request = $request->withAttribute('email', 'user@configflow.dev');
+            return $handler->handle($request);
+        }
+
         $auth = $request->getHeaderLine('Authorization');
         if (!$auth || strpos($auth, 'Bearer ') !== 0) {
             $response = new SlimResponse();
