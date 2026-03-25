@@ -1,6 +1,7 @@
 <?php
 /**
  * User Routes - PHP 7.4 compatible
+ * Includes unlock and devices endpoints
  */
 
 namespace App\Routes;
@@ -40,7 +41,7 @@ class UserRoutes
     {
         $db = Database::getInstance();
         $user = $db->fetchOne(
-            'SELECT id, email, username, display_name, is_active, created_at, last_login FROM users WHERE id = :id',
+            'SELECT id, email, username, display_name, is_active, created_at, last_login, failed_login_attempts FROM users WHERE id = :id',
             ['id' => $args['id']]
         );
         if (!$user) return $this->json($response, ['error' => 'Not found'], 404);
@@ -67,7 +68,7 @@ class UserRoutes
     {
         $body = $request->getParsedBody() ?? [];
         $roleName = $body['roleName'] ?? '';
-        if (!in_array($roleName, ['admin', 'moderator', 'user'])) {
+        if (!in_array($roleName, ['admin', 'moderator', 'editor', 'viewer', 'user'])) {
             return $this->json($response, ['error' => 'Invalid role'], 400);
         }
         $db = Database::getInstance();
@@ -92,5 +93,31 @@ class UserRoutes
             ['uid' => $args['id'], 'role' => $args['roleName']]
         );
         return $this->json($response, ['success' => true]);
+    }
+
+    public function unlock(Request $request, Response $response, array $args): Response
+    {
+        $db = Database::getInstance();
+        $user = $db->fetchOne('SELECT id FROM users WHERE id = :id', ['id' => $args['id']]);
+        if (!$user) return $this->json($response, ['error' => 'User not found'], 404);
+
+        $db->execute(
+            'UPDATE users SET failed_login_attempts = 0, updated_at = NOW() WHERE id = :id',
+            ['id' => $args['id']]
+        );
+        return $this->json($response, ['success' => true]);
+    }
+
+    public function devices(Request $request, Response $response, array $args): Response
+    {
+        $db = Database::getInstance();
+        $user = $db->fetchOne('SELECT id FROM users WHERE id = :id', ['id' => $args['id']]);
+        if (!$user) return $this->json($response, ['error' => 'User not found'], 404);
+
+        $devices = $db->fetchAll(
+            'SELECT id, device_fingerprint, created_at, expires_at, revoked FROM refresh_tokens WHERE user_id = :uid ORDER BY created_at DESC',
+            ['uid' => $args['id']]
+        );
+        return $this->json($response, $devices);
     }
 }

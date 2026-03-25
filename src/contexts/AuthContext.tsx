@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authApi, setAccessToken, getAccessToken } from '../services/api';
+import { apiConfig } from '@/config/apiConfig';
 
 export interface User {
   id: string;
@@ -36,31 +37,78 @@ const DEMO_USER: User = {
   avatar: '',
 };
 
+// No-auth user when security is disabled
+const NO_AUTH_USER: User = {
+  id: 'noauth-001',
+  email: 'user@configflow.dev',
+  username: 'user',
+  displayName: 'Open User',
+  roles: ['admin', 'editor', 'viewer'],
+  permissions: ['config:read', 'config:write', 'config:delete', 'user:manage', 'audit:read'],
+  avatar: '',
+};
+
 const AuthContext = createContext<AuthContextType | null>(null);
+
+/**
+ * Normalize login response from Node vs PHP backend.
+ * Node: res.data = { accessToken, user: { id, email, username, displayName, roles } }
+ * PHP:  res.data = { accessToken, user: { id, email, username, displayName, roles } }
+ * Both should be the same shape now, but we handle edge cases.
+ */
+function extractLoginData(resData: any): { accessToken: string; user: any } {
+  // Handle nested data.data wrapper (some Node responses)
+  const d = resData.data || resData;
+  return {
+    accessToken: d.accessToken || d.access_token || '',
+    user: d.user || {},
+  };
+}
+
+/**
+ * Normalize /auth/me response.
+ * Node: { id, email, username, display_name, roles, permissions }
+ * PHP:  { id, email, username, display_name, roles }
+ */
+function extractMeData(resData: any): User {
+  const d = resData.data || resData;
+  return {
+    id: d.id,
+    email: d.email,
+    username: d.username,
+    displayName: d.display_name || d.displayName || d.username,
+    roles: d.roles || [],
+    permissions: d.permissions || [],
+  };
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(false);
 
+  const securityEnabled = apiConfig.securityEnabled;
+
   const refreshUser = useCallback(async () => {
+    if (!securityEnabled) return;
     try {
       const res = await authApi.me();
-      setUser({
-        id: res.data.id,
-        email: res.data.email,
-        username: res.data.username,
-        displayName: res.data.display_name || res.data.username,
-        roles: res.data.roles || [],
-        permissions: res.data.permissions || [],
-      });
+      setUser(extractMeData(res.data));
     } catch {
       setUser(null);
       setAccessToken(null);
     }
-  }, []);
+  }, [securityEnabled]);
 
   useEffect(() => {
+    // If security is disabled, auto-authenticate
+    if (!securityEnabled) {
+      setUser(NO_AUTH_USER);
+      setIsDemoMode(false);
+      setIsLoading(false);
+      return;
+    }
+
     // Check demo mode first
     const demoFlag = localStorage.getItem('cf_demo');
     if (demoFlag === 'true') {
@@ -75,22 +123,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       setIsLoading(false);
     }
-  }, [refreshUser]);
+  }, [refreshUser, securityEnabled]);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await authApi.login({ email, password });
-    setAccessToken(res.data.accessToken);
+    const { accessToken, user: userData } = extractLoginData(res.data);
+    
+    if (securityEnabled && accessToken) {
+      setAccessToken(accessToken);
+    }
+    
     setUser({
-      id: res.data.user.id,
-      email: res.data.user.email,
-      username: res.data.user.username,
-      displayName: res.data.user.displayName || res.data.user.username,
-      roles: res.data.user.roles || [],
-      permissions: [],
+      id: userData.id,
+      email: userData.email,
+      username: userData.username,
+      displayName: userData.displayName || userData.display_name || userData.username,
+      roles: userData.roles || [],
+      permissions: userData.permissions || [],
     });
     setIsDemoMode(false);
-    await refreshUser();
-  }, [refreshUser]);
+    
+    if (securityEnabled) {
+      await refreshUser();
+    }
+  }, [refreshUser, securityEnabled]);
 
   const loginDemo = useCallback(() => {
     localStorage.setItem('cf_demo', 'true');
@@ -103,14 +159,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    if (!isDemoMode) {
+    if (!isDemoMode && securityEnabled) {
       try { await authApi.logout(); } catch { /* ignore */ }
     }
     setAccessToken(null);
     localStorage.removeItem('cf_demo');
-    setUser(null);
+    if (!securityEnabled) {
+      // When security is off, just reset to NO_AUTH_USER
+      setUser(NO_AUTH_USER);
+    } else {
+      setUser(null);
+    }
     setIsDemoMode(false);
-  }, [isDemoMode]);
+  }, [isDemoMode, securityEnabled]);
 
   const updateProfile = useCallback((updates: Partial<User>) => {
     setUser(prev => prev ? { ...prev, ...updates } : prev);

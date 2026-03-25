@@ -1,6 +1,7 @@
 <?php
 /**
  * Auth Routes - PHP 7.4 compatible
+ * With security flag support
  */
 
 namespace App\Routes;
@@ -9,6 +10,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use App\Services\AuthService;
 use App\Config\Database;
+use App\Config\Env;
 
 class AuthRoutes
 {
@@ -51,10 +53,40 @@ class AuthRoutes
 
     public function login(Request $request, Response $response): Response
     {
+        $securityEnabled = Env::get('SECURITY_ENABLED', 'true');
         $body = $request->getParsedBody() ?? [];
         $email = $body['email'] ?? '';
         $password = $body['password'] ?? '';
         $fingerprint = $body['deviceFingerprint'] ?? null;
+
+        // If security is disabled, return a mock successful login
+        if ($securityEnabled === 'false' || $securityEnabled === '0') {
+            $db = Database::getInstance();
+            $user = $db->fetchOne('SELECT * FROM users WHERE email = :email', ['email' => $email]);
+            if (!$user) {
+                // Create user on-the-fly if not exists
+                $auth = new AuthService();
+                $auth->register([
+                    'email' => $email,
+                    'username' => explode('@', $email)[0],
+                    'password' => $password ?: 'nopassword',
+                    'displayName' => $body['displayName'] ?? explode('@', $email)[0],
+                ]);
+                $user = $db->fetchOne('SELECT * FROM users WHERE email = :email', ['email' => $email]);
+            }
+            $roles = $db->fetchAll('SELECT role FROM user_roles WHERE user_id = :uid', ['uid' => $user['id']]);
+            $response->getBody()->write(json_encode([
+                'accessToken' => 'no-security-token',
+                'user' => [
+                    'id' => $user['id'],
+                    'email' => $user['email'],
+                    'username' => $user['username'],
+                    'displayName' => $user['display_name'],
+                    'roles' => array_column($roles, 'role'),
+                ],
+            ]));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
 
         $auth = new AuthService();
         $result = $auth->login($email, $password, $fingerprint);
@@ -86,6 +118,15 @@ class AuthRoutes
 
     public function refresh(Request $request, Response $response): Response
     {
+        $securityEnabled = Env::get('SECURITY_ENABLED', 'true');
+        if ($securityEnabled === 'false' || $securityEnabled === '0') {
+            $response->getBody()->write(json_encode([
+                'accessToken' => 'no-security-token',
+                'user' => ['id' => 'noauth-001', 'email' => 'user@configflow.dev', 'username' => 'user', 'displayName' => 'Open User', 'roles' => ['admin']],
+            ]));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
+
         $cookies = $request->getCookieParams();
         $refreshToken = $cookies['__configflow_refresh'] ?? '';
 
@@ -122,7 +163,9 @@ class AuthRoutes
     public function logout(Request $request, Response $response): Response
     {
         $userId = $request->getAttribute('userId');
-        if ($userId) {
+        $securityEnabled = Env::get('SECURITY_ENABLED', 'true');
+        
+        if ($userId && $securityEnabled !== 'false' && $securityEnabled !== '0') {
             $auth = new AuthService();
             $auth->logout($userId);
         }
@@ -137,6 +180,20 @@ class AuthRoutes
     public function me(Request $request, Response $response): Response
     {
         $userId = $request->getAttribute('userId');
+        $securityEnabled = Env::get('SECURITY_ENABLED', 'true');
+
+        if ($securityEnabled === 'false' || $securityEnabled === '0') {
+            $response->getBody()->write(json_encode([
+                'id' => 'noauth-001',
+                'email' => 'user@configflow.dev',
+                'username' => 'user',
+                'display_name' => 'Open User',
+                'roles' => ['admin', 'editor', 'viewer'],
+                'permissions' => ['config:read', 'config:write', 'config:delete', 'user:manage', 'audit:read'],
+            ]));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
+
         $db = Database::getInstance();
         $user = $db->fetchOne('SELECT id, email, username, display_name, created_at FROM users WHERE id = :id', ['id' => $userId]);
         if (!$user) {

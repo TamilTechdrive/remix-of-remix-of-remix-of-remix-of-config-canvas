@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, Lock, Mail, ArrowRight, Shield, Fingerprint, Server, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import ApiSettingsPanel from '@/components/settings/ApiSettingsPanel';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -193,7 +194,12 @@ const Login = () => {
             </p>
           </div>
 
-          <div className="mt-8 flex items-center justify-center gap-4 text-[10px] text-muted-foreground/60">
+          {/* API Settings */}
+          <div className="mt-6">
+            <ApiSettingsPanel />
+          </div>
+
+          <div className="mt-4 flex items-center justify-center gap-4 text-[10px] text-muted-foreground/60">
             <span className="flex items-center gap-1"><Lock className="w-3 h-3" /> TLS Encrypted</span>
             <span className="w-px h-3 bg-border" />
             <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> CSRF Protected</span>
