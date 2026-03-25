@@ -1,9 +1,8 @@
 import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+import { apiConfig } from '@/config/apiConfig';
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: apiConfig.baseUrl,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
   timeout: 15000,
@@ -37,25 +36,49 @@ function onTokenRefreshed(token: string) {
 
 // ===== CSRF FETCH =====
 async function fetchCsrfToken(): Promise<string> {
-  const res = await axios.get(`${API_BASE_URL}/csrf-token`, { withCredentials: true });
+  const res = await axios.get(`${apiConfig.baseUrl}/csrf-token`, { withCredentials: true });
   csrfToken = res.data.csrfToken;
   return csrfToken!;
 }
 
+// ===== DEVICE FINGERPRINT =====
+function generateFingerprint(): string {
+  const components = [
+    navigator.userAgent,
+    navigator.language,
+    screen.width + 'x' + screen.height,
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+    navigator.hardwareConcurrency?.toString() || '',
+  ];
+  let hash = 0;
+  const str = components.join('|');
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+}
+
 // ===== REQUEST INTERCEPTOR =====
 api.interceptors.request.use(async (config) => {
-  const token = getAccessToken();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  // Only attach auth headers if security is enabled
+  if (apiConfig.securityEnabled) {
+    const token = getAccessToken();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
 
-  // Attach CSRF token for mutating requests
-  if (['post', 'put', 'patch', 'delete'].includes(config.method || '')) {
-    if (!csrfToken) await fetchCsrfToken();
-    if (csrfToken) config.headers['X-CSRF-Token'] = csrfToken;
+    // Attach CSRF token for mutating requests
+    if (['post', 'put', 'patch', 'delete'].includes(config.method || '')) {
+      if (!csrfToken) {
+        try { await fetchCsrfToken(); } catch { /* ignore */ }
+      }
+      if (csrfToken) config.headers['X-CSRF-Token'] = csrfToken;
+    }
+
+    // Attach device fingerprint
+    const fp = generateFingerprint();
+    if (fp) config.headers['X-Device-Fingerprint'] = fp;
   }
-
-  // Attach device fingerprint
-  const fp = generateFingerprint();
-  if (fp) config.headers['X-Device-Fingerprint'] = fp;
 
   return config;
 });
@@ -66,7 +89,8 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/')) {
+    // Only attempt refresh if security is enabled
+    if (apiConfig.securityEnabled && error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/')) {
       if (isRefreshing) {
         return new Promise((resolve) => {
           subscribeTokenRefresh((token) => {
@@ -80,7 +104,7 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true });
+        const res = await axios.post(`${apiConfig.baseUrl}/auth/refresh`, {}, { withCredentials: true });
         const newToken = res.data.accessToken;
         setAccessToken(newToken);
         onTokenRefreshed(newToken);
@@ -98,26 +122,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-// ===== DEVICE FINGERPRINT =====
-function generateFingerprint(): string {
-  const components = [
-    navigator.userAgent,
-    navigator.language,
-    screen.width + 'x' + screen.height,
-    Intl.DateTimeFormat().resolvedOptions().timeZone,
-    navigator.hardwareConcurrency?.toString() || '',
-  ];
-  // Simple hash
-  let hash = 0;
-  const str = components.join('|');
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0;
-  }
-  return Math.abs(hash).toString(36);
-}
 
 // ===== AUTH API =====
 export const authApi = {
@@ -157,21 +161,34 @@ export const configApi = {
 };
 
 // ===== CONFIG DATA API (nodes/edges/snapshots) =====
+// PHP backend uses /configurations/{id}/save-full, Node uses /config-data/{id}/save-full
+// We normalize the path based on backend
+function configDataPath(id: string, action: string): string {
+  if (apiConfig.backend === 'php') {
+    return `/configurations/${id}/${action}`;
+  }
+  return `/config-data/${id}/${action}`;
+}
+
 export const configDataApi = {
   saveFull: (id: string, data: { nodes: any[]; edges: any[] }) =>
-    api.post(`/config-data/${id}/save-full`, data),
+    api.post(configDataPath(id, 'save-full'), data),
 
   loadFull: (id: string) =>
-    api.get(`/config-data/${id}/load-full`),
+    api.get(configDataPath(id, 'load-full')),
 
   createSnapshot: (id: string, data: { name?: string; description?: string }) =>
-    api.post(`/config-data/${id}/snapshots`, data),
+    api.post(configDataPath(id, 'snapshots'), data),
 
   listSnapshots: (id: string) =>
-    api.get(`/config-data/${id}/snapshots`),
+    api.get(configDataPath(id, 'snapshots')),
 
-  restoreSnapshot: (configId: string, snapshotId: string) =>
-    api.post(`/config-data/${configId}/snapshots/${snapshotId}/restore`),
+  restoreSnapshot: (configId: string, snapshotId: string) => {
+    if (apiConfig.backend === 'php') {
+      return api.post(`/configurations/${configId}/snapshots/${snapshotId}/restore`);
+    }
+    return api.post(`/config-data/${configId}/snapshots/${snapshotId}/restore`);
+  },
 };
 
 // ===== PROJECT API =====
